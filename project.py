@@ -2580,6 +2580,14 @@ class Project(object):
         msg = 'manifest set to %s' % self.revisionExpr
         active_git.symbolic_ref('-m', msg, ref, dst)
 
+  def _LocallyChanged(self):
+    if self.HasChanges():
+      return True
+    branches = self.GetBranches()
+    if len(branches) > 0:
+      return True
+    return False
+
   def _CheckDirReference(self, srcdir, destdir, share_refs):
     # Git worktrees don't use symlinks to share at all.
     if self.use_git_worktrees:
@@ -2618,7 +2626,7 @@ class Project(object):
       if os.path.lexists(dst):
         src = platform_utils.realpath(src_path)
         # Fail if the links are pointing to the wrong place
-        if src != dst:
+        if src != dst and self._LocallyChanged():
           _error('%s is different in %s vs %s', name, destdir, srcdir)
           raise GitError('--force-sync not enabled; cannot overwrite a local '
                          'work tree. If you\'re comfortable with the '
